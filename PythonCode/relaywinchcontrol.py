@@ -9,6 +9,8 @@ import RPi.GPIO as GPIO
 import sys
 import tty
 import termios
+import datetime
+import pause
 
 # Clean up any errors from last execution (ensures winch not reeling).
 GPIO.setwarnings(False)
@@ -76,9 +78,20 @@ while(True):
 		StopWind()
 
 	if char == 'x':
+		StopWind()
 		break
 
 	char = ''
+
+# Test the datetime waiting method
+# Proper method to be implemented when decision is made on how this info will be sent to raspberry pi.
+dt = datetime.now() + timedelta(seconds=3)
+pause.until(dt)
+WindOut()
+sleep(2)
+WindIn()
+sleep(1.8)
+StopWind()
 
 print("DONE!")
 GPIO.cleanup()
