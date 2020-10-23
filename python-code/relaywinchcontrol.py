@@ -2,7 +2,6 @@
 # Relay winch code for the Turtle GPS Tag Dunker.
 # Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative.
 
-# Declare Variables
 # Import libraries needed to run the code.
 from time import sleep
 import RPi.GPIO as GPIO
@@ -12,6 +11,7 @@ import termios
 import datetime
 import pause
 
+# Declare Variables
 # Clean up any errors from last execution (ensures winch not reeling).
 GPIO.setwarnings(False)
 GPIO.cleanup()
