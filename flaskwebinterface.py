@@ -91,6 +91,7 @@ def LoadSettings():
 		settings = json.load(file_object);
 
 	# Assign GPS Tag Dunker state info.
+	global isDunking
 	isDunking = settings['State']['isDunking']
 
 	# Load in the current schedule's information.
@@ -102,7 +103,7 @@ def LoadSettings():
 		settings['CurrentSchedule']['loopCount'])
 
 LoadSettings();
-print (currentSchedule.dunkTime);
+print (isDunking);
 
 
 # WINCH CONTROL CODE
@@ -141,13 +142,18 @@ app = Flask(__name__)
 # This is the main/index page of the GPS Tag Dunker web interface.
 @app.route('/')
 def index():
-	return render_template('index.html', **currentSchedule.getData())
+	if isDunking:
+		print ("IS DUNKING");
+		return render_template('index.html', **currentSchedule.getData())
+	else:
+		print ("IS NOT DUNKING");
+		return render_template('index.html')
 
 # This is for the function that stops the Winch from winding in or out.
 @app.route('/webStopWind') 
 def webStopWind():
  	StopWind();
-	return render_template('index.html', **currentSchedule.getData())
+	return index()
 
 # This is for the function that winds the Winch out.
 @app.route('/webWindOut') 
