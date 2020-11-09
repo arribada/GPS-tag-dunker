@@ -1,0 +1,30 @@
+{
+  "State":
+  {
+    "isDunked":false  
+  },
+  "CurrentSchedule":
+  {
+    "dunkTime":1.0,
+    "raiseTime":0.0013,
+    "loopEnable":true,
+    "loopCount":5
+  },
+  "SavedSchedules":
+  {
+    "D1h-R5s":
+    {
+      "dunkTime":1.0,
+      "raiseTime":0.0013,
+      "loopEnable":true,
+      "loopCount":5
+    },
+    "D4h-R15s":
+    {
+      "dunkTime":4.0,
+      "raiseTime":0.0039,
+      "loopEnable":false,
+      "loopCount":0
+    }
+  }
+}
