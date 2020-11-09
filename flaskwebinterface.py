@@ -3,13 +3,40 @@
 # Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative.
 
 # LIBRARY IMPORTING
-from flask import Flask, render_template
+import os;
 import datetime
-from time import sleep
-import RPi.GPIO as GPIO
 import pause
 import json;
-import os;
+import RPi.GPIO as GPIO
+from time import sleep
+from flask import Flask, render_template
+
+
+# CLASSES CODE
+# Define the Schedule Class
+class Schedule:
+    """The class which holds Schedule data"""
+
+    def __init__(startTime, dunkTime, RiseTime, loopEnabled, loopCount):
+        """Initialise the Schedule's attributes"""
+        self.startTime		= startTime
+        self.dunkTime      	= dunkTime
+        self.RiseTime    	= RiseTime
+        self.loopEnabled  	= loopEnabled
+        self.loopCount  	= loopCount
+
+    def getTimeRemaining(self):
+        """Returns this Schedule's Info"""
+        return (f"")
+
+    def updateScheduleInfo(startTime, dunkTime, RiseTime, loopEnabled, loopCount):
+        """Updates this Schedule's information"""
+        self.startTime		= startTime
+        self.dunkTime      	= dunkTime
+        self.RiseTime    	= RiseTime
+        self.loopEnabled  	= loopEnabled
+        self.loopCount  	= loopCount
+        
 
 # VARIABLE SETUP
 # GPS TAG DUNKER SETTINGS VARIABLES
@@ -40,28 +67,6 @@ GPIO.setup(winchOutPin, GPIO.OUT)
 delay = 1
 
 
-# CLASSES CODE
-# Define the Schedule Class
-class Schedule:
-    """The class which holds Schedule data"""
-
-    def __init__(self, name, colour, strength):
-        """Initialise the Cheese attributes"""
-        self.name      = name
-        self.colour    = colour
-        self.strength  = strength
-
-    def get_cheese_info(self):
-        """Returns this Cheese's Info"""
-        return (f"{self.name.title()} has a {self.colour} colour and an {self.strength} taste.")
-
-    def update_cheese_info(self, name, colour, strength):
-        """Updates this Cheese's Strength if possible"""
-        self.cheese_info['name']      = cheese_info['name']
-        self.cheese_info['colour']    = cheese_info['colour']
-        self.cheese_info['strength']  = cheese_info['strength']
-
-
 # SETTINGS CODE
 # Loads in the JSON settings data
 def LoadSettings():
@@ -70,8 +75,6 @@ def LoadSettings():
 		settings = json.load(file_object);
 
 	isDunking = settings["State"][0]["isDunked"];
-	#isDunking 
-
 
 LoadSettings();
 
