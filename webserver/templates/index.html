@@ -3,19 +3,22 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 
 <!DOCTYPE html>
 	<head>
-		<link rel="stylesheet" href='../static/style.css'>
+		<link rel="stylesheet" href="../static/style.css">
 	</head>
 	<body>
 		<h1>GPS Tag Dunker</h1>
-
+		<h2>Current Schedule</h2>
+		<p>Start time: {{ scheduleStartTime }} | Dunk time: {{ scheduleDunkTime }} | Rise time: {{ scheduleRiseTime }} | Loop enabled: {{ scheduleLoopEnabled }} | Loop count: {{ scheduleLoopCount }}</p>
 
 		<h2>Dunk Testing</h2>
-		<!-- For Dunking the Tag -->
+		<a href="/webStopWind"><input type="button" value="webStopWind"></a>
+		<a href="/webWindOut"><input type="button" value="webWindOut"></a>
+		<a href="/webWindIn"><input type="button" value="webWindIn"></a>
 		<!-- Dunk Button -->
 		<!-- Raise Button -->
 		<!-- Stop Button -->
 
-		<h2>Schedule</h2>
+		<h2>Saved Schedules</h2>
 		<!-- Dunk Time Input Field -->
 		<!-- Rise Time Input Field -->
 		<!-- Loop checkbox -->
@@ -24,6 +27,5 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 		<!-- Save Schedule Button -->
 		<!-- Start Schedule Button -->
 
-		<h3>DateTime:  {{ time }}</h3>
 	</body>
 </html>

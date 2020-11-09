@@ -6,26 +6,26 @@
   "CurrentSchedule":
   {
     "startTime":"2020-11-09 12:22",
-    "dunkTime":1.0,
-    "riseTime":0.0013,
+    "dunkTime":"00:00:05",
+    "riseTime":"00:00:05",
     "loopEnabled":true,
     "loopCount":5
   },
   "SavedSchedules":
   {
-    "D1h-R5s":
+    "D5m-R10s":
     {
       "startTime":"2020-11-09 12:22",
-      "dunkTime":1.0,
-      "riseTime":0.0013,
+      "dunkTime":"00:05:00",
+      "riseTime":"00:00:10",
       "loopEnabled":true,
       "loopCount":5
     },
-    "D4h-R15s":
+    "D1h-R15s":
     {
       "startTime":"2020-11-09 12:22",
-      "dunkTime":4.0,
-      "riseTime":0.0039,
+      "dunkTime":"01:00:00",
+      "riseTime":"00:00:15",
       "loopEnabled":false,
       "loopCount":0
     }

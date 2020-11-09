@@ -12,28 +12,38 @@ from time import sleep
 from flask import Flask, render_template
 
 
+# NOTES:  DateTime conversion = "date_time_obj = datetime.strptime(date_time_str, %H:%M:%S')"
+
+
 # CLASSES CODE
 # Define the Schedule Class
 class Schedule:
     """The class which holds Schedule data"""
 
-    def __init__(self, startTime, dunkTime, RiseTime, loopEnabled, loopCount):
+    def __init__(self, startTime, dunkTime, riseTime, loopEnabled, loopCount):
         """Initialise the Schedule's attributes"""
         self.startTime		= startTime
         self.dunkTime      	= dunkTime
-        self.RiseTime    	= RiseTime
+        self.riseTime    	= riseTime
         self.loopEnabled  	= loopEnabled
         self.loopCount  	= loopCount
 
-    # def getTimeRemaining(self):
-    #     """Returns this Schedule's Info"""
-    #     return (f"")
+    def getData(self):
+        """Returns this Schedule's Info"""
+        return {
+		'title':'GPS Tag Dunker',
+		'scheduleStartTime':self.startTime,
+		'scheduleDunkTime':self.dunkTime,
+		'scheduleRiseTime':self.riseTime,
+		'scheduleLoopEnabled':self.loopEnabled,
+		'scheduleLoopCount':self.loopCount
+		}
 
-    def updateScheduleInfo(self, startTime, dunkTime, RiseTime, loopEnabled, loopCount):
+    def updateScheduleInfo(self, startTime, dunkTime, riseTime, loopEnabled, loopCount):
         """Updates this Schedule's information"""
         self.startTime		= startTime
         self.dunkTime      	= dunkTime
-        self.RiseTime    	= RiseTime
+        self.riseTime    	= riseTime
         self.loopEnabled  	= loopEnabled
         self.loopCount  	= loopCount
 
@@ -48,6 +58,9 @@ isDunking = False
 
 # Declares an empty Schedule ready to be populated by JSON info.
 currentSchedule = Schedule("", "", "", "", "")
+
+# Variable the holds the amount of seconds that are in an hour.
+secondsInHours = 3600
 
 # Create an array for all the different schduled lifts to go into.
 scheduledLifts = []
@@ -81,23 +94,15 @@ def LoadSettings():
 	isDunking = settings['State']['isDunking']
 
 	# Load in the current schedule's information.
+	global currentSchedule
 	currentSchedule = Schedule(settings['CurrentSchedule']['startTime'], 
 		settings['CurrentSchedule']['dunkTime'], 
 		settings['CurrentSchedule']['riseTime'], 
 		settings['CurrentSchedule']['loopEnabled'],	
 		settings['CurrentSchedule']['loopCount'])
 
-	print ("%.2f" % (currentSchedule.dunkTime));
-
-	savedSchedule = Schedule(settings['SavedSchedules']['D4h-R15s']['startTime'], 
-		settings['SavedSchedules']['D4h-R15s']['dunkTime'], 
-		settings['SavedSchedules']['D4h-R15s']['riseTime'], 
-		settings['SavedSchedules']['D4h-R15s']['loopEnabled'],	
-		settings['SavedSchedules']['D4h-R15s']['loopCount'])
-
-	print ("%.2f" % (savedSchedule.dunkTime));
-
 LoadSettings();
+print (currentSchedule.dunkTime);
 
 
 # WINCH CONTROL CODE
@@ -128,6 +133,7 @@ def ReadSchedule():
 			scheduledLifts.append(line)
 
 
+
 # WEBSITE CREATION
 # Create basic website.
 app = Flask(__name__)
@@ -135,13 +141,25 @@ app = Flask(__name__)
 # This is the main/index page of the GPS Tag Dunker web interface.
 @app.route('/')
 def index():
-	now = datetime.datetime.now()
-	dateTime = now.strftime("%Y-%m-%d %H:%M")
-	templateData = {
-		'title':'GPS Tag Dunker',
-		'time':dateTime
-		}
-	return render_template('index.html', **templateData)
+	return render_template('index.html', **currentSchedule.getData())
+
+# This is for the function that stops the Winch from winding in or out.
+@app.route('/webStopWind') 
+def webStopWind():
+ 	StopWind();
+	return render_template('index.html', **currentSchedule.getData())
+
+# This is for the function that winds the Winch out.
+@app.route('/webWindOut') 
+def webWindOut():
+ 	WindOut();
+	return render_template('index.html', **currentSchedule.getData())
+
+# This is for the function that winds the Winch in.
+@app.route('/webWindIn') 
+def webWindIn():
+ 	WindIn();
+	return render_template('index.html', **currentSchedule.getData())
 
 # Runs the Flask server and website.
 if __name__ == '__main__':
