@@ -8,12 +8,12 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 	<body>
 		<h1>GPS Tag Dunker</h1>
 		<h2>Current Schedule</h2>
-		<p>Start time: {{ scheduleStartTime }} | Dunk time: {{ scheduleDunkTime }} | Rise time: {{ scheduleRiseTime }} | Loop enabled: {{ scheduleLoopEnabled }} | Loop count: {{ scheduleLoopCount }}</p>
+		<p>This is a string: {{ scheduleString }}</p>
 
 		<h2>Dunk Testing</h2>
-		<a href="/webStopWind"><input type="button" value="webStopWind"></a>
-		<a href="/webWindOut"><input type="button" value="webWindOut"></a>
-		<a href="/webWindIn"><input type="button" value="webWindIn"></a>
+		<a href="/webStopWind"><input type="button" disabled={{isDunking}} value="Stop Winding"></a>
+		<a href="/webWindOut"><input type="button" disabled={{isDunking}} value="Wind Tag Down"></a>
+		<a href="/webWindIn"><input type="button" disabled={{isDunking}} value="Wind Tag Up"></a>
 		<!-- Dunk Button -->
 		<!-- Raise Button -->
 		<!-- Stop Button -->

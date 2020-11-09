@@ -31,12 +31,11 @@ class Schedule:
     def getData(self):
         """Returns this Schedule's Info"""
         return {
-		'title':'GPS Tag Dunker',
-		'scheduleStartTime':self.startTime,
-		'scheduleDunkTime':self.dunkTime,
-		'scheduleRiseTime':self.riseTime,
-		'scheduleLoopEnabled':self.loopEnabled,
-		'scheduleLoopCount':self.loopCount
+		'startTime':self.startTime,
+		'dunkTime':self.dunkTime,
+		'riseTime':self.riseTime,
+		'loopEnabled':self.loopEnabled,
+		'loopCount':self.loopCount
 		}
 
     def updateScheduleInfo(self, startTime, dunkTime, riseTime, loopEnabled, loopCount):
@@ -103,7 +102,6 @@ def LoadSettings():
 		settings['CurrentSchedule']['loopCount'])
 
 LoadSettings();
-print (isDunking);
 
 
 # WINCH CONTROL CODE
@@ -142,9 +140,21 @@ app = Flask(__name__)
 # This is the main/index page of the GPS Tag Dunker web interface.
 @app.route('/')
 def index():
+
+	dunkData = currentSchedule.getData()
+	dunkData['isDunking'] = isDunking
+	scheduleString = "";
+	if isDunking:
+		scheduleString = ('Start time: ', {dunkData['startTime']}, ' Dunk time: ', {dunkData['dunkTime']} , 'Rise time: ', {dunkData['riseTime']}, ' Loop enabled: ', {dunkData['loopEnabled']} , 'Loop count: ', {dunkData['loopCount']});
+	else:
+		scheduleString = "There is no scheduled dunk occurring.";
+
+	templateData = {'scheduleString':scheduleString}
+	print (templateData);
+
 	if isDunking:
 		print ("IS DUNKING");
-		return render_template('index.html', **currentSchedule.getData())
+		return render_template('index.html', **templateData)
 	else:
 		print ("IS NOT DUNKING");
 		return render_template('index.html')
