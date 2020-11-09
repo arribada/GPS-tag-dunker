@@ -3,10 +3,10 @@
 # Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative.
 
 # LIBRARY IMPORTING
-import os;
+import os
 import datetime
 import pause
-import json;
+import json
 import RPi.GPIO as GPIO
 from time import sleep
 from flask import Flask, render_template
@@ -17,7 +17,7 @@ from flask import Flask, render_template
 class Schedule:
     """The class which holds Schedule data"""
 
-    def __init__(startTime, dunkTime, RiseTime, loopEnabled, loopCount):
+    def __init__(self, startTime, dunkTime, RiseTime, loopEnabled, loopCount):
         """Initialise the Schedule's attributes"""
         self.startTime		= startTime
         self.dunkTime      	= dunkTime
@@ -25,26 +25,29 @@ class Schedule:
         self.loopEnabled  	= loopEnabled
         self.loopCount  	= loopCount
 
-    def getTimeRemaining(self):
-        """Returns this Schedule's Info"""
-        return (f"")
+    # def getTimeRemaining(self):
+    #     """Returns this Schedule's Info"""
+    #     return (f"")
 
-    def updateScheduleInfo(startTime, dunkTime, RiseTime, loopEnabled, loopCount):
+    def updateScheduleInfo(self, startTime, dunkTime, RiseTime, loopEnabled, loopCount):
         """Updates this Schedule's information"""
         self.startTime		= startTime
         self.dunkTime      	= dunkTime
         self.RiseTime    	= RiseTime
         self.loopEnabled  	= loopEnabled
         self.loopCount  	= loopCount
-        
+
 
 # VARIABLE SETUP
 # GPS TAG DUNKER SETTINGS VARIABLES
 # The file path of the Settings file.
-settingsFilePath = os.getcwd() + "/settings.json";
+settingsFilePath = os.getcwd() + "/settings.json"
 
 # Allows for reading whether the GPS Tag Dunker is currently dunking.
-isDunking = False;
+isDunking = False
+
+# Declares an empty Schedule ready to be populated by JSON info.
+currentSchedule = Schedule("", "", "", "", "")
 
 # Create an array for all the different schduled lifts to go into.
 scheduledLifts = []
@@ -71,10 +74,28 @@ delay = 1
 # Loads in the JSON settings data
 def LoadSettings():
 
-	with open(settingsFilePath) as file_object:
+	with open(settingsFilePath, "r") as file_object:
 		settings = json.load(file_object);
 
-	isDunking = settings["State"][0]["isDunked"];
+	# Assign GPS Tag Dunker state info.
+	isDunking = settings['State']['isDunking']
+
+	# Load in the current schedule's information.
+	currentSchedule = Schedule(settings['CurrentSchedule']['startTime'], 
+		settings['CurrentSchedule']['dunkTime'], 
+		settings['CurrentSchedule']['riseTime'], 
+		settings['CurrentSchedule']['loopEnabled'],	
+		settings['CurrentSchedule']['loopCount'])
+
+	print ("%.2f" % (currentSchedule.dunkTime));
+
+	savedSchedule = Schedule(settings['SavedSchedules']['D4h-R15s']['startTime'], 
+		settings['SavedSchedules']['D4h-R15s']['dunkTime'], 
+		settings['SavedSchedules']['D4h-R15s']['riseTime'], 
+		settings['SavedSchedules']['D4h-R15s']['loopEnabled'],	
+		settings['SavedSchedules']['D4h-R15s']['loopCount'])
+
+	print ("%.2f" % (savedSchedule.dunkTime));
 
 LoadSettings();
 
@@ -117,8 +138,8 @@ def index():
 	now = datetime.datetime.now()
 	dateTime = now.strftime("%Y-%m-%d %H:%M")
 	templateData = {
-		'title' : 'GPS Tag Dunker',
-		'time' : dateTime
+		'title':'GPS Tag Dunker',
+		'time':dateTime
 		}
 	return render_template('index.html', **templateData)
 
