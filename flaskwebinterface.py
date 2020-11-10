@@ -9,7 +9,7 @@ import pause
 import json
 import RPi.GPIO as GPIO
 from time import sleep
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 
 # NOTES:  DateTime conversion = "date_time_obj = datetime.strptime(date_time_str, %H:%M:%S')"
@@ -137,45 +137,100 @@ def ReadSchedule():
 # Create basic website.
 app = Flask(__name__)
 
-# This is the main/index page of the GPS Tag Dunker web interface.
+
 @app.route('/')
 def index():
 
+	if isDunking:
+		return schedule();
+	else:
+		return noSchedule();
+
+
+# This is the page that is presented when a schedule is not running.
+@app.route('/NoSchedule')
+def noSchedule():
+
 	dunkData = currentSchedule.getData()
-	dunkData['isDunking'] = isDunking
-	scheduleString = "";
-	if isDunking:
-		scheduleString = ('Start time: ', {dunkData['startTime']}, ' Dunk time: ', {dunkData['dunkTime']} , 'Rise time: ', {dunkData['riseTime']}, ' Loop enabled: ', {dunkData['loopEnabled']} , 'Loop count: ', {dunkData['loopCount']});
-	else:
-		scheduleString = "There is no scheduled dunk occurring.";
+	scheduleString = "There is no scheduled dunk occurring.";
+	testingString = ('Testing is available.');
+	templateData = {'ScheduleString':scheduleString, 'TestingString':testingString}
+	return render_template('noschedule.html', **templateData)
 
-	templateData = {'scheduleString':scheduleString}
-	print (templateData);
 
-	if isDunking:
-		print ("IS DUNKING");
-		return render_template('index.html', **templateData)
-	else:
-		print ("IS NOT DUNKING");
-		return render_template('index.html')
+@app.route('/Schedule')
+def schedule():
+
+	dunkData = currentSchedule.getData()
+	scheduleString = ('Start time: ', {dunkData['startTime']}, ' Dunk time: ', {dunkData['dunkTime']} , 'Rise time: ', {dunkData['riseTime']}, ' Loop enabled: ', {dunkData['loopEnabled']} , 'Loop count: ', {dunkData['loopCount']});
+	testingString = ('Testing is not available while a dunk is ongoing.');
+	templateData = {'ScheduleString':scheduleString, 'TestingString':testingString}
+	return render_template('schedule.html', **templateData)
+
+
+@app.route('/saveSchedule', methods=['POST'])
+def saveSchedule():
+
+	dunkTime = request.form['dunkTime']
+	return noSchedule();
+
+
+@app.route('/startSchedule')
+def startSchedule():
+
+	print ("Starting Schedule!");
+	WindOut();
+	sleep (3);
+	WindIn();
+	sleep (3);
+	StopWind();
+	return schedule();
+
+
+# This is for the function that stops a scheduled dunk and resets the current schedule.
+@app.route('/webStopDunk') 
+def webStopDunk():
+	print ("STOPPED DUNK");
+ 	StopWind();
+ 	WindOut();
+ 	sleep (1);
+ 	WindIn();
+ 	sleep (1);
+	StopWind();
+
+	return noSchedule()
 
 # This is for the function that stops the Winch from winding in or out.
 @app.route('/webStopWind') 
 def webStopWind():
+	print ("STOP");
  	StopWind();
-	return index()
+	return noSchedule()
 
 # This is for the function that winds the Winch out.
 @app.route('/webWindOut') 
 def webWindOut():
- 	WindOut();
-	return render_template('index.html', **currentSchedule.getData())
+	if not isDunking:
+		print ("OUT");
+ 		WindOut();
+	else:
+		print ("NOT AVAILABLE, DUNKING IN PROGRESS");
+	return noSchedule()
 
 # This is for the function that winds the Winch in.
 @app.route('/webWindIn') 
 def webWindIn():
- 	WindIn();
-	return render_template('index.html', **currentSchedule.getData())
+	if not isDunking:
+		print ("IN");
+	 	WindIn();
+	else:
+		print ("NOT AVAILABLE, DUNKING IN PROGRESS");
+	return noSchedule()
+	#render_template('index.html', **currentSchedule.getData())
+
+
+
+
 
 # Runs the Flask server and website.
 if __name__ == '__main__':

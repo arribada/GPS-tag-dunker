@@ -9,20 +9,19 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 		<h1>GPS Tag Dunker</h1>
 		<h2>Current Schedule</h2>
 		<p>{{ ScheduleString }}</p>
-		<form action="/action_page.php">
+		<form action="/saveSchedule" method="post">
 			<fieldset>
 				<legend>New Schedule:</legend>
-				<label for="dunkTime">Dunk Time:</label>
-				<input type="text" id="dunkTime" name="dunkTime"><br><br>
-				<label for="riseTime">Rise Time:</label>
-				<input type="text" id="riseTime" name="riseTime"><br><br>
-				<label for="repeatSchedule">Repeat Schedule:</label>
-				<input type="checkbox" id="repeatSchedule" name="repeatSchedule" value="Repeat"><br><br>
-				<label for="loopCount">Loop Count:</label>
-				<input type="text" id="loopCount" name="loopCount"><br><br>
-				<input type="submit" value="Save">
+				Dunk Time:  		<input type="text" id="dunkTime" name="dunkTime"><br><br>
+				Rise Time:  		<input type="text" id="riseTime" name="riseTime"><br><br>
+				Repeat Schedule:  	<input type="checkbox" id="loopEnabled" name="repeatSchedule"><br><br> <!-- value="Repeat" -->
+				Repeat Count:  		<input type="text" id="loopCount" name="loopCount"><br><br>
+
+				<a href="/saveSchedule"><input type="button" value="Save"></a>
+				<a href="/startSchedule"><input type="button" value="Start"></a>
 			</fieldset>
 		</form>
+		<p>{{ ScheduleString }}</p>
 
 		<h2>Dunk Testing</h2>
 		<p>{{ TestingString }}</p>
