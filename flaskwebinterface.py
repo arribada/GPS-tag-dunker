@@ -4,7 +4,7 @@
 
 # LIBRARY IMPORTING
 import os
-import datetime
+from datetime import datetime
 import pause
 import json
 import RPi.GPIO as GPIO
@@ -113,6 +113,7 @@ def LoadSettings():
 		settings['CurrentSchedule']['loopEnabled'],
 		settings['CurrentSchedule']['loopCount'])
 
+# Load the Settings right at the start.
 LoadSettings();
 
 
@@ -184,9 +185,10 @@ def noSchedule():
 @app.route('/Schedule')
 def schedule():
 
-	dunkData = currentSchedule.getData()
-	scheduleString = ('Start time: ', {dunkData['startTime']}, ' Dunk time: ', {dunkData['dunkTime']} , 'Rise time: ', {dunkData['riseTime']}, ' Loop enabled: ', {dunkData['loopEnabled']} , 'Loop count: ', {dunkData['loopCount']});
-	testingString = ('Testing is not available while a dunk is ongoing.');
+
+	scheduleData = currentSchedule.getData()
+	scheduleString = ('Name:  ' + scheduleData['name'] + ', Start Time:  ' + scheduleData['startTime'])
+	testingString = ('Testing is not available while a dunk is ongoing.')
 	templateData = {'ScheduleString':scheduleString, 'TestingString':testingString}
 	return render_template('schedule.html', **templateData)
 
@@ -224,19 +226,33 @@ def webStartSchedule():
 
 	print ("Starting Schedule!");
 	WindOut();
-	sleep (1);
+	sleep (0.2);
 	WindIn();
-	sleep (1);
+	sleep (0.2);
 	StopWind();
 
 	isDunking = True;
 	settings = GetSettingsData()
-	state = settings['State']['isDunking']
-	state['isDunking'] = isDunking;
 
+	# Set the settings' isDunking State field to True.
+	settings['State']['isDunking'] = isDunking;
+
+	# Set the start time for the Current Schedule.
+	startTime = datetime.now()
+	settings['CurrentSchedule']['startTime'] = startTime.strftime("%Y/%m/%d %H:%M:%S")
+
+	# Write the new settings JSON data out to the settings.json file.
 	with open(settingsFilePath, 'w') as f:
 		json.dump(settings, f, indent=3);
 
+	# Wait while json data saves.
+	sleep (2)
+
+	# Refresh settings JSON DATA.
+	LoadSettings();
+	sleep (1)
+
+	# Finish by sending the user to the web page where it shows the current schedule.
 	return schedule();
 
 
@@ -246,9 +262,9 @@ def webStopDunk():
 	print ("STOPPED DUNK");
  	StopWind();
  	WindOut();
- 	sleep (1);
+ 	sleep (0.2);
  	WindIn();
- 	sleep (1);
+ 	sleep (0.2);
 	StopWind();
 
 	isDunking = False;
