@@ -4,24 +4,24 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 <!DOCTYPE html>
 	<head>
 		<link rel="stylesheet" href="../static/style.css">
+		<title>GPS Tag Dunker</title>
 	</head>
 	<body>
-		<h1>GPS Tag Dunker</h1>
 		<h2>Current Schedule</h2>
 		<p>{{ ScheduleString }}</p>
-		<form action="/saveSchedule" method="post">
-			<fieldset>
-				<legend>New Schedule:</legend>
-				Dunk Time:  		<input type="text" id="dunkTime" name="dunkTime"><br><br>
-				Rise Time:  		<input type="text" id="riseTime" name="riseTime"><br><br>
-				Repeat Schedule:  	<input type="checkbox" id="loopEnabled" name="repeatSchedule"><br><br> <!-- value="Repeat" -->
-				Repeat Count:  		<input type="text" id="loopCount" name="loopCount"><br><br>
+		<form action="/webSaveSchedule" method="post">
+			<!-- <fieldset>
+				<legend>New Schedule:</legend> -->
+			Schedule Name:		<input type="text" name="scheduleName"><br><br>
+			Dunk Time:  		<input type="text" name="dunkTime"><br><br>
+			Rise Time:  		<input type="text" name="riseTime"><br><br>
+			Repeat Schedule:  	<input type="checkbox" name="loopEnabled" value="Repeat"><br><br> <!--  -->
+			Repeat Count:  		<input type="text" name="loopCount"><br><br>
 
-				<a href="/saveSchedule"><input type="button" value="Save"></a>
-				<a href="/startSchedule"><input type="button" value="Start"></a>
-			</fieldset>
+			<a href="/webSaveSchedule"><input type="button" value="Save"></a>
+			<!-- <a href="/webStartSchedule"><input type="button" value="Start"></a> < -->
+<!-- 			</fieldset> -->
 		</form>
-		<p>{{ ScheduleString }}</p>
 
 		<h2>Dunk Testing</h2>
 		<p>{{ TestingString }}</p>
@@ -30,13 +30,6 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 		<a href="/webWindIn"><input type="button" value="Wind Tag Up"></a>
 
 		<h2>Saved Schedules</h2>
-		<!-- Dunk Time Input Field -->
-		<!-- Rise Time Input Field -->
-		<!-- Loop checkbox -->
-		<!-- Loop amount Input Field -->
-		<!-- Schedule Name Input Field -->
-		<!-- Save Schedule Button -->
-		<!-- Start Schedule Button -->
 
 	</body>
 </html>

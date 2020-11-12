@@ -1,10 +1,11 @@
 {
   "State":
   {
-    "isDunking":false  
+    "isDunking":false
   },
   "CurrentSchedule":
   {
+    "name":"defaultSchedule",
     "startTime":"2020-11-09 12:22",
     "dunkTime":"00:00:05",
     "riseTime":"00:00:05",
@@ -12,22 +13,22 @@
     "loopCount":5
   },
   "SavedSchedules":
-  {
-    "D5m-R10s":
+  [
     {
+      "name":"D5m-R10s",
       "startTime":"2020-11-09 12:22",
       "dunkTime":"00:05:00",
       "riseTime":"00:00:10",
       "loopEnabled":true,
       "loopCount":5
     },
-    "D1h-R15s":
     {
+      "name":"D1h-R15s",
       "startTime":"2020-11-09 12:22",
       "dunkTime":"01:00:00",
       "riseTime":"00:00:15",
       "loopEnabled":false,
       "loopCount":0
     }
-  }
+  ]
 }
