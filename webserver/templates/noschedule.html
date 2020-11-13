@@ -9,18 +9,16 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 	<body>
 		<h2>Current Schedule</h2>
 		<p>{{ ScheduleString }}</p>
-		<form action="/webSaveSchedule" method="post">
-			<!-- <fieldset>
-				<legend>New Schedule:</legend> -->
-			Schedule Name:		<input type="text" name="scheduleName"><br><br>
-			Dunk Time:  		<input type="text" name="dunkTime"><br><br>
-			Rise Time:  		<input type="text" name="riseTime"><br><br>
-			Repeat Schedule:  	<input type="checkbox" name="loopEnabled" value="Repeat"><br><br> <!--  -->
-			Repeat Count:  		<input type="text" name="loopCount"><br><br>
-
-			<a href="/webSaveSchedule"><input type="button" value="Save"></a>
-			<a href="/webStartSchedule"><input type="button" value="Start"></a>
-<!-- 			</fieldset> -->
+		<form action="/webStartSchedule" method="get">
+			<fieldset>
+				<legend>New Schedule:</legend>
+				Schedule Name:		<input type="text" name="scheduleName"><br><br>
+				Dunk Time:  		<input type="text" name="dunkTime"><br><br>
+				Rise Time:  		<input type="text" name="riseTime"><br><br>
+				Repeat Schedule:  	<input type="checkbox" name="loopEnabled"><br><br> <!--  -->
+				Repeat Count:  		<input type="text" name="loopCount"><br><br>
+				<input type="submit" value="Start Schedule"><br><br>
+ 			</fieldset>
 		</form>
 
 		<h2>Dunk Testing</h2>
@@ -30,6 +28,7 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 		<a href="/webWindIn"><input type="button" value="Wind Tag Up"></a>
 
 		<h2>Saved Schedules</h2>
+
 
 	</body>
 </html>

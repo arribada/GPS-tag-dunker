@@ -5,12 +5,12 @@
   },
   "CurrentSchedule":
   {
-    "name":"defaultSchedule",
-    "startTime":"2020-11-09 12:22",
-    "dunkTime":"00:00:05",
-    "riseTime":"00:00:05",
-    "loopEnabled":true,
-    "loopCount":5
+    "name":"",
+    "startTime":"",
+    "dunkTime":"",
+    "riseTime":"",
+    "loopEnabled":false,
+    "loopCount":
   },
   "SavedSchedules":
   [

@@ -94,8 +94,8 @@ def GetSettingsData():
 		return settings;
 
 
-# Loads in the JSON settings and Schedule data.
-def LoadSettings():
+# Refreshes the dunking state and CurrentSchedule data.
+def RefreshSchedule():
 
 	# Retrieve the settings
 	settings = GetSettingsData();
@@ -114,23 +114,58 @@ def LoadSettings():
 		settings['CurrentSchedule']['loopCount'])
 
 # Load the Settings right at the start.
-LoadSettings();
+RefreshSchedule();
 
 
 # Saves the given json data to the settings.json file's list of Saved Schedules.
-def SaveSchedule(scheduleData):
+def SaveAndStartSchedule(scheduleData):
 
 	# Retrieve the settings
 	settings = GetSettingsData()
+
+	# Setthe Current Schedule to reflect the schedule data that the user has entered.
+	currentSchedule = settings['CurrentSchedule']
+	currentSchedule['name'] 		= scheduleData['name']
+	currentSchedule['startTime'] 	= scheduleData['startTime']
+	currentSchedule['dunkTime'] 	= scheduleData['dunkTime']
+	currentSchedule['riseTime'] 	= scheduleData['riseTime']
+	currentSchedule['loopEnabled'] 	= scheduleData['loopEnabled']
+	currentSchedule['loopCount'] 	= scheduleData['loopCount']
 
 	# Load in the SavedSchdules list and append the new Schedule
 	# TODO:  Need to insert check to see if all parameters for new Schedule already exist.
 	savedSchedules = settings['SavedSchedules']
 	savedSchedules.append(scheduleData)
 
+	# Set the isDunking value to true for reference.
+	isDunking = True
+
+	# Set the settings' isDunking State field to True.
+	settings['State']['isDunking'] = isDunking;
+
 	# Save new settings data into json file.
-	with open(settingsFilePath, 'w') as f: 
+	with open(settingsFilePath, 'w') as f:
 		json.dump(settings, f, indent=4);
+
+ 	# Refresh Schedule and settings JSON DATA.
+	RefreshSchedule();
+
+	# Test code for now, will remove with proper winch code later.
+	WindOut();
+	sleep (0.2);
+	WindIn();
+	sleep (0.2);
+	StopWind();
+
+
+# def StartSchedule():
+
+# 	# Write the new settings JSON data out to the settings.json file.
+# 	with open(settingsFilePath, 'w') as f:
+# 		json.dump(settings, f, indent=3);
+
+# 	# Refresh settings JSON DATA.
+# 	RefreshSchedule();
 
 
 # WINCH CONTROL CODE
@@ -174,7 +209,7 @@ def index():
 def noSchedule():
 
 	dunkData = currentSchedule.getData()
-	scheduleString = "There is no scheduled dunk occurring.";
+	scheduleString = "There is no scheduled dunk occurring.  Starting a schedule will automatically save it.";
 	testingString = ('Testing is available.');
 	templateData = {'ScheduleString':scheduleString, 'TestingString':testingString}
 	return render_template('noschedule.html', **templateData)
@@ -185,7 +220,6 @@ def noSchedule():
 @app.route('/Schedule')
 def schedule():
 
-
 	scheduleData = currentSchedule.getData()
 	scheduleString = ('Name:  ' + scheduleData['name'] + ', Start Time:  ' + scheduleData['startTime'])
 	testingString = ('Testing is not available while a dunk is ongoing.')
@@ -193,64 +227,34 @@ def schedule():
 	return render_template('schedule.html', **templateData)
 
 
-# Method for loading in HTML form data from the noSchedule page.
-# TODO:  Actually get this to load data so I can append it to settings.json file.
-@app.route('/webSaveSchedule', methods=['GET', 'POST'])
-def webSaveSchedule():
+# # Method for loading in HTML form data from the noSchedule page.
+# # TODO:  Actually get this to load data so I can append it to settings.json file.
+# @app.route('/webSaveSchedule', methods=['GET'])
+# def webSaveSchedule():
 
-	print ("Attempting to Save Schedule");
+# 	print ("Attempting to Save Schedule");
 
-	print ('Request Method:  ' + request.method)
-	if request.method == 'GET':
-		scheduleName = request.args.get('scheduleName', 'N/A')
-
-		print ('Args:  ' + str(len(request.args.keys())))
-		print ('Schedule:  ' + scheduleName);
-
-	return noSchedule();
-
-
-	# scheduleData = {'name':str(request.form.get('scheduleName')),
-	# 	'startTime':'',
-	# 	'dunkTime':request.form.get('dunkTime'),
-	# 	'riseTime':request.form.get('riseTime'),
-	# 	'loopEnabled':request.form.get('loopEnabled'),
-	# 	'loopCount':request.form.get('loopCount')
-	# 	}
+# 	return noSchedule();
 
 
 # Starts the selected dunk schedule.
 # TODO:  Make this work after the webSaveSchedule method is up and running, for now it is a placeholder/test.
-@app.route('/webStartSchedule')
+@app.route('/webStartSchedule', methods=['GET'])
 def webStartSchedule():
 
-	print ("Starting Schedule!");
-	WindOut();
-	sleep (0.2);
-	WindIn();
-	sleep (0.2);
-	StopWind();
+	print ('Attempting to save and start schedule!');
 
-	isDunking = True;
-	settings = GetSettingsData()
-
-	# Set the settings' isDunking State field to True.
-	settings['State']['isDunking'] = isDunking;
-
-	# Set the start time for the Current Schedule.
+	# Set scheduleData fields from the retrieved form data.  'startTime' is set from Python.
 	startTime = datetime.now()
-	settings['CurrentSchedule']['startTime'] = startTime.strftime("%Y/%m/%d %H:%M:%S")
+	scheduleData = {'name':str(request.args.get('scheduleName')),
+		'startTime':startTime.strftime("%Y/%m/%d %H:%M:%S"),
+		'dunkTime':str(request.args.get('dunkTime')),
+		'riseTime':str(request.args.get('riseTime')),
+		'loopEnabled':str('true' if request.args.get('loopEnabled') == 'on' else 'false'),
+		'loopCount':str(request.args.get('loopCount'))
+		}
 
-	# Write the new settings JSON data out to the settings.json file.
-	with open(settingsFilePath, 'w') as f:
-		json.dump(settings, f, indent=3);
-
-	# Wait while json data saves.
-	sleep (2)
-
-	# Refresh settings JSON DATA.
-	LoadSettings();
-	sleep (1)
+	SaveAndStartSchedule(scheduleData);
 
 	# Finish by sending the user to the web page where it shows the current schedule.
 	return schedule();
