@@ -12,11 +12,11 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 		<form action="/webStartSchedule" method="get">
 			<fieldset>
 				<legend>New Schedule:</legend>
-				Schedule Name:		<input type="text" name="scheduleName"><br><br>
-				Dunk Time:  		<input type="text" name="dunkTime"><br><br>
-				Rise Time:  		<input type="text" name="riseTime"><br><br>
+				Schedule Name:		<input type="text" name="scheduleName" required><br><br>
+				Dunk Time:  		<input type="time" name="dunkTime" step="1" required><br><br>
+				Rise Time:  		<input type="time" name="riseTime" step="1" required><br><br>
 				Repeat Schedule:  	<input type="checkbox" name="loopEnabled"><br><br> <!--  -->
-				Repeat Count:  		<input type="text" name="loopCount"><br><br>
+				Repeat Count:  		<input type="number" name="loopCount" min="-1", value="0"><br><br>
 				<input type="submit" value="Start Schedule"><br><br>
  			</fieldset>
 		</form>

@@ -4,15 +4,15 @@
 
 # LIBRARY IMPORTING
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import pause
 import json
 import RPi.GPIO as GPIO
 from time import sleep
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request
 
 
-# NOTES:  DateTime conversion = "date_time_obj = datetime.strptime(date_time_str, %H:%M:%S')"
+# NOTES:  DateTime conversion: "date_time_obj = datetime.strptime(date_time_str, %H:%M:%S')"
 
 
 # CLASSES CODE
@@ -20,10 +20,11 @@ from flask import Flask, render_template, request, url_for
 class Schedule:
     """The class which holds Schedule data"""
 
-    def __init__(self, name, startTime, dunkTime, riseTime, loopEnabled, loopCount):
+    def __init__(self, name, startTime, finishTime, dunkTime, riseTime, loopEnabled, loopCount):
         """Initialise the Schedule's attributes"""
         self.name 			= name
         self.startTime		= startTime
+        self.finishTime		= finishTime
         self.dunkTime      	= dunkTime
         self.riseTime    	= riseTime
         self.loopEnabled  	= loopEnabled
@@ -34,16 +35,18 @@ class Schedule:
         return {
         'name':self.name,
 		'startTime':self.startTime,
+		'finishTime':self.finishTime,
 		'dunkTime':self.dunkTime,
 		'riseTime':self.riseTime,
 		'loopEnabled':self.loopEnabled,
 		'loopCount':self.loopCount
 		}
 
-    def updateScheduleInfo(self, name, startTime, dunkTime, riseTime, loopEnabled, loopCount):
+    def updateScheduleInfo(self, name, startTime, finishTime, dunkTime, riseTime, loopEnabled, loopCount):
         """Updates this Schedule's information"""
         self.name 			= name
         self.startTime		= startTime
+        self.startTime		= finishTime
         self.dunkTime      	= dunkTime
         self.riseTime    	= riseTime
         self.loopEnabled  	= loopEnabled
@@ -59,7 +62,7 @@ settingsFilePath = os.getcwd() + "/settings.json"
 isDunking = False
 
 # Declares an empty Schedule ready to be populated by JSON info.
-currentSchedule = Schedule("", "", "", "", "", "")
+currentSchedule = Schedule('', '', '', '', '', '' ,'')
 
 # Variable the holds the amount of seconds that are in an hour.
 secondsInHours = 3600
@@ -108,6 +111,7 @@ def RefreshSchedule():
 	global currentSchedule
 	currentSchedule = Schedule(settings['CurrentSchedule']['name'],
 		settings['CurrentSchedule']['startTime'],
+		settings['CurrentSchedule']['finishTime'],
 		settings['CurrentSchedule']['dunkTime'],
 		settings['CurrentSchedule']['riseTime'],
 		settings['CurrentSchedule']['loopEnabled'],
@@ -127,6 +131,7 @@ def SaveAndStartSchedule(scheduleData):
 	currentSchedule = settings['CurrentSchedule']
 	currentSchedule['name'] 		= scheduleData['name']
 	currentSchedule['startTime'] 	= scheduleData['startTime']
+	currentSchedule['finishTime'] 	= scheduleData['finishTime']
 	currentSchedule['dunkTime'] 	= scheduleData['dunkTime']
 	currentSchedule['riseTime'] 	= scheduleData['riseTime']
 	currentSchedule['loopEnabled'] 	= scheduleData['loopEnabled']
@@ -150,22 +155,37 @@ def SaveAndStartSchedule(scheduleData):
  	# Refresh Schedule and settings JSON DATA.
 	RefreshSchedule();
 
-	# Test code for now, will remove with proper winch code later.
-	WindOut();
-	sleep (0.2);
-	WindIn();
-	sleep (0.2);
-	StopWind();
+	# Run the Schedule
+	loopCount = int(currentSchedule['loopCount'])
+	if currentSchedule['loopEnabled'] == 'true':
+		if loopCount > 0:
+			for i in range(loopCount):
+				WindOut();
+				sleep (3); # TODO: Replace 3 with time it takes to wind tag under water
+				StopWind();
+
+				print (datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S'));
+
+				
+				epoch = datetime.utcfromtimestamp(0)
+				delta = datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S') - epoch
+				pause.until(datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S'));
+
+				WindIn()
+				sleep (3) # TODO: Replace 3 with time it takes to wind tag out of water
+				StopWind()
+
+				pause.until(datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S'));
+
+				print ('Loop ' + str(i) + ' completed.');
 
 
-# def StartSchedule():
 
-# 	# Write the new settings JSON data out to the settings.json file.
-# 	with open(settingsFilePath, 'w') as f:
-# 		json.dump(settings, f, indent=3);
 
-# 	# Refresh settings JSON DATA.
-# 	RefreshSchedule();
+	#print ('Scheduled dunk will end at:  ' + currentSchedule['finishTime'])
+	#pause.until(datetime.strptime(currentSchedule['finishTime'], '%Y-%m-%d %H:%M:%S'))
+
+	print ('Scheduled Dunk Finished');
 
 
 # WINCH CONTROL CODE
@@ -190,7 +210,7 @@ def StopWind():
 
 
 # WEBSITE CREATION
-# Create basic website.
+# Initialise the web app.
 app = Flask(__name__)
 
 
@@ -220,40 +240,68 @@ def noSchedule():
 @app.route('/Schedule')
 def schedule():
 
-	scheduleData = currentSchedule.getData()
-	scheduleString = ('Name:  ' + scheduleData['name'] + ', Start Time:  ' + scheduleData['startTime'])
-	testingString = ('Testing is not available while a dunk is ongoing.')
-	templateData = {'ScheduleString':scheduleString, 'TestingString':testingString}
+	settings = GetSettingsData();
+
+	scheduleData 	= currentSchedule.getData()
+	name 			= 'Name:  ' + scheduleData['name']
+	startTime 		= 'Start Time:  ' + scheduleData['startTime']
+	finishTime 		= 'Finish Time:  ' + scheduleData['finishTime']
+
+	testingString 	= ('Testing is not available while a scheduled dunk is ongoing.  Press stop to stop current scheduled dunk and start a new one.')
+	templateData 	= {'name':name, 'startTime':startTime, 'finishTime':finishTime, 'TestingString':testingString}
 	return render_template('schedule.html', **templateData)
 
 
-# # Method for loading in HTML form data from the noSchedule page.
-# # TODO:  Actually get this to load data so I can append it to settings.json file.
-# @app.route('/webSaveSchedule', methods=['GET'])
-# def webSaveSchedule():
-
-# 	print ("Attempting to Save Schedule");
-
-# 	return noSchedule();
-
-
-# Starts the selected dunk schedule.
-# TODO:  Make this work after the webSaveSchedule method is up and running, for now it is a placeholder/test.
+# Saves and Starts a dunk Schedule based on user input from the web form.
 @app.route('/webStartSchedule', methods=['GET'])
 def webStartSchedule():
 
 	print ('Attempting to save and start schedule!');
 
-	# Set scheduleData fields from the retrieved form data.  'startTime' is set from Python.
-	startTime = datetime.now()
+	# Set scheduleData fields from the retrieved form data.
+	# 'startTime' and 'finishTime' are set from Python.
+	startTime 	= datetime.now()
+
 	scheduleData = {'name':str(request.args.get('scheduleName')),
-		'startTime':startTime.strftime("%Y/%m/%d %H:%M:%S"),
+		'startTime':startTime.strftime('%Y-%m-%d %H:%M:%S'),
 		'dunkTime':str(request.args.get('dunkTime')),
 		'riseTime':str(request.args.get('riseTime')),
 		'loopEnabled':str('true' if request.args.get('loopEnabled') == 'on' else 'false'),
 		'loopCount':str(request.args.get('loopCount'))
 		}
 
+
+	finishTime 	= datetime.strptime(str(datetime.min), '%Y-%m-%d %H:%M:%S')
+	loopCount 	= int(scheduleData['loopCount'])
+	if scheduleData['loopEnabled'] == 'true':
+
+		if loopCount < 0:
+			finishTime = datetime.strptime(str(datetime.max), '%Y-%m-%d %H:%M:%S')
+
+		elif loopCount > 0:
+
+			# Set up initial dunkTime and riseTime values for parsing into datetime.time values.
+			initialDunkTime = scheduleData['dunkTime']
+			initialRiseTime = scheduleData['riseTime']
+
+			# Check to see if any seconds exist on the time.  Add them if not present.
+			if len(str(initialDunkTime)) < 6:
+				initialDunkTime = initialDunkTime + ':00'
+
+			if len(str(initialRiseTime)) < 6:
+				initialRiseTime = initialRiseTime + ':00'
+
+			# Convert stored dunkTime and riseTime to datetime values
+			dunkTime = datetime.combine (datetime.min, datetime.strptime(initialDunkTime, '%H:%M:%S').time()) - datetime.min
+			riseTime = datetime.combine (datetime.min, datetime.strptime(initialRiseTime, '%H:%M:%S').time()) - datetime.min
+
+			dunkRiseTotalTime = dunkTime + riseTime
+			for i in range(loopCount - 1):
+				dunkRiseTotalTime = dunkRiseTotalTime + dunkTime + riseTime
+
+			finishTime = datetime.strptime(scheduleData['startTime'], '%Y-%m-%d %H:%M:%S') + dunkRiseTotalTime
+
+	scheduleData['finishTime'] = str(finishTime)
 	SaveAndStartSchedule(scheduleData);
 
 	# Finish by sending the user to the web page where it shows the current schedule.
@@ -263,7 +311,6 @@ def webStartSchedule():
 # This is for the function that stops a scheduled dunk and resets the current schedule.
 @app.route('/webStopDunk') 
 def webStopDunk():
-	print ("STOPPED DUNK");
  	StopWind();
  	WindOut();
  	sleep (0.2);
@@ -272,6 +319,7 @@ def webStopDunk():
 	StopWind();
 
 	isDunking = False;
+	print ("STOPPED DUNK");
 
 	return noSchedule()
 

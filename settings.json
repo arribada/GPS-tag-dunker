@@ -7,16 +7,18 @@
   {
     "name":"",
     "startTime":"",
+    "finishTime":"",
     "dunkTime":"",
     "riseTime":"",
     "loopEnabled":false,
-    "loopCount":
+    "loopCount":0
   },
   "SavedSchedules":
   [
     {
       "name":"D5m-R10s",
-      "startTime":"2020-11-09 12:22",
+      "startTime":"",
+      "finishTime":"",
       "dunkTime":"00:05:00",
       "riseTime":"00:00:10",
       "loopEnabled":true,
@@ -24,7 +26,8 @@
     },
     {
       "name":"D1h-R15s",
-      "startTime":"2020-11-09 12:22",
+      "startTime":"",
+      "finishTime":"",
       "dunkTime":"01:00:00",
       "riseTime":"00:00:15",
       "loopEnabled":false,
