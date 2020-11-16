@@ -88,13 +88,19 @@ GPIO.setup(winchOutPin, GPIO.OUT)
 delay = 1
 
 
-# SETTINGS CODE
+# SETTINGS & SCHEDULE CODE
 # Loads in the Settings data from the settings.json file.
 def GetSettingsData():
 
 	with open(settingsFilePath, "r") as file_object:
 		settings = json.load(file_object);
 		return settings;
+
+
+# Returns the schedules that have been saved into the settings.json file.
+def GetSavedSchedules():
+
+	return GetSettingsData()['SavedSchedules'];
 
 
 # Refreshes the dunking state and CurrentSchedule data.
@@ -127,8 +133,8 @@ def SaveAndStartSchedule(scheduleData):
 	# Retrieve the settings
 	settings = GetSettingsData()
 
-	# Setthe Current Schedule to reflect the schedule data that the user has entered.
-	currentSchedule = settings['CurrentSchedule']
+	# Set the Current Schedule to reflect the schedule data that the user has entered.
+	currentSchedule 				= settings['CurrentSchedule']
 	currentSchedule['name'] 		= scheduleData['name']
 	currentSchedule['startTime'] 	= scheduleData['startTime']
 	currentSchedule['finishTime'] 	= scheduleData['finishTime']
@@ -140,7 +146,9 @@ def SaveAndStartSchedule(scheduleData):
 	# Load in the SavedSchdules list and append the new Schedule
 	# TODO:  Need to insert check to see if all parameters for new Schedule already exist.
 	savedSchedules = settings['SavedSchedules']
-	savedSchedules.append(scheduleData)
+
+	if not CheckScheduleExists(scheduleData):
+		savedSchedules.append(scheduleData)
 
 	# Set the isDunking value to true for reference.
 	isDunking = True
@@ -157,35 +165,42 @@ def SaveAndStartSchedule(scheduleData):
 
 	# Run the Schedule
 	loopCount = int(currentSchedule['loopCount'])
+	print ('Scheduled dunk will end at:  ' + currentSchedule['finishTime'])
+
 	if currentSchedule['loopEnabled'] == 'true':
+		print ('Starting looped dunk:  ' + str(loopCount) + ', ' + currentSchedule['loopEnabled']);
 		if loopCount > 0:
 			for i in range(loopCount):
-				WindOut();
-				sleep (3); # TODO: Replace 3 with time it takes to wind tag under water
-				StopWind();
+				# Wind the tag up and down until the loop count is complete
+				WindInTimed (3, datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S').time());
+				WindInTimed (3, datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S').time());
+		# 		print ('Loop ' + str(i) + ' completed.');
+		# else:
+		# 	# Infinitely Loop
 
-				print (datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S'));
-
-				
-				epoch = datetime.utcfromtimestamp(0)
-				delta = datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S') - epoch
-				pause.until(datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S'));
-
-				WindIn()
-				sleep (3) # TODO: Replace 3 with time it takes to wind tag out of water
-				StopWind()
-
-				pause.until(datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S'));
-
-				print ('Loop ' + str(i) + ' completed.');
-
-
-
-
-	#print ('Scheduled dunk will end at:  ' + currentSchedule['finishTime'])
-	#pause.until(datetime.strptime(currentSchedule['finishTime'], '%Y-%m-%d %H:%M:%S'))
+	else:
+		print ('Starting one off dunk:  ' + str(loopCount) + ', ' + currentSchedule['loopEnabled']);
+		# Wind the tag up and down once.
+		WindInTimed (3, datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S').time());
+		print ('Loop ' + str(i) + ' completed.');
+		WindInTimed (3, datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S').time());
 
 	print ('Scheduled Dunk Finished');
+
+
+def CheckScheduleExists(scheduleToCheck):
+
+	scheduleFound = False
+	for schedule in GetSavedSchedules():
+		print ("Schedule Name:  " + schedule['name'])
+		if schedule['name'] == scheduleToCheck['name']:
+			print ('A schedule with that name already exists!');
+			scheduleFound = True
+
+	if scheduleFound == False:
+		print ('No schedule with a matching name has been found.  Saving new schedule...');
+
+	return scheduleFound;
 
 
 # WINCH CONTROL CODE
@@ -207,6 +222,25 @@ def StopWind():
 	GPIO.output(winchInPin, GPIO.LOW)
 	GPIO.output(winchOutPin, GPIO.LOW)
 	sleep(delay)
+
+# Winds the Tag up for windInTime, then waits for riseTime.
+def WindInTimed(windInTime, riseTime):
+
+	# Wind the tag out of the water, and wait the required riseTime.
+	WindIn()
+	sleep (3) # TODO: Replace 3 with time it takes to wind tag out of water, depth dependant!
+	StopWind()
+	pause.seconds((riseTime.hour * 60 + riseTime.minute) * 60 + riseTime.second);
+
+
+# Winds the Tag up for windOutTime, then waits for dunkTime.
+def WindOutTimed(windOutTime, dunkTime):
+
+	# Wind the tag down into the water, and wait the required dunkTime.
+	WindOut();
+	sleep (3); # TODO: Replace 3 with time it takes to wind tag under water, depth dependant!
+	StopWind();
+	pause.seconds((dunkTime.hour * 60 + dunkTime.minute) * 60 + dunkTime.second);
 
 
 # WEBSITE CREATION
@@ -231,8 +265,8 @@ def noSchedule():
 	dunkData = currentSchedule.getData()
 	scheduleString = "There is no scheduled dunk occurring.  Starting a schedule will automatically save it.";
 	testingString = ('Testing is available.');
-	templateData = {'ScheduleString':scheduleString, 'TestingString':testingString}
-	return render_template('noschedule.html', **templateData)
+	schedules = GetSavedSchedules()
+	return render_template('noschedule.html', scheduleInfo=scheduleString, testingInfo=testingString, Schedules=schedules)
 
 
 # This is the page that is presented when scheduled dunk is running.
@@ -252,7 +286,7 @@ def schedule():
 	return render_template('schedule.html', **templateData)
 
 
-# Saves and Starts a dunk Schedule based on user input from the web form.
+# Saves and Starts a dunk Schedule based on user input from the new Schedule web form.
 @app.route('/webStartSchedule', methods=['GET'])
 def webStartSchedule():
 
@@ -270,6 +304,7 @@ def webStartSchedule():
 		'loopCount':str(request.args.get('loopCount'))
 		}
 
+	print ('Schedule Data:  ' + scheduleData['name']);
 
 	finishTime 	= datetime.strptime(str(datetime.min), '%Y-%m-%d %H:%M:%S')
 	loopCount 	= int(scheduleData['loopCount'])
