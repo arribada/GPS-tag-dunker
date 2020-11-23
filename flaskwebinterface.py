@@ -380,13 +380,14 @@ def DunkRoutine():
 			WindIn();
 			sleep (tagRiseWindTime.second);
 			StopWind();
-			isLocked = False
+
+		isLocked = False
 
 	# Set the Dunk State to idle.
 	dunkState = dunkStates[4]
 
 	print ('Should return noSched')
-	return index();
+	return noSchedule;
 
 
 # WEBSITE CREATION
@@ -431,8 +432,6 @@ def loading():
 @app.route('/webViewSchedule', methods=['GET'])
 def webViewSchedule():
 
-	print ('Saving Schedule');
-
 	# Set scheduleData fields from the retrieved form data.
 	# 'startTime' and 'finishTime' are set from Python.
 	startTime 	= datetime.now()
@@ -456,11 +455,11 @@ def webViewSchedule():
 def webStartDunk():
 
 	global isActive
-	isActive = True;
-	DunkRoutine();
+	if not isActive:
+		isActive = True;
+		DunkRoutine();
 
-	#return schedule();
-	return redirect('schedule.html', Schedule=currentSchedule.getData(), IsActive=True)
+	return schedule();
 
 
 # This is for the function that stops a scheduled dunk and resets the current schedule.
@@ -472,6 +471,7 @@ def webStopDunk():
 	UpdateSettingsDunkState();
 
 	return noSchedule();
+
 
 # This is for the function that stops the Winch from winding in or out.
 @app.route('/webStopWind') 

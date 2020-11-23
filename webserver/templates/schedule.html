@@ -4,24 +4,45 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 <!DOCTYPE html>
 	<head>
 		<link rel="stylesheet" href="../static/style.css">
+		<title>GPS Tag Dunker</title>
 	</head>
-	<body>
-		<h1>GPS Tag Dunker</h1>
-		<h2>Current Schedule</h2>
-		<p><b>Name: </b>{{Schedule.name}}</p>
-		<p><b>Dunk Time: </b>{{Schedule.dunkTime}}</p>
-		<p><b>Rise Time: </b>{{Schedule.riseTime}}</p>
-		<p><b>Repeat Enabled: </b>{{Schedule.loopEnabled}}</p>
-		<p><b>Repeat Count: </b>{{Schedule.loopCount}}</p><br>
+	<body onload="ShowInactive()">
+		<div id="MainSection">
+			<h2>Current Schedule</h2>
+			<p><b>Name: </b>{{Schedule.name}}</p>
+			<p><b>Dunk Time: </b>{{Schedule.dunkTime}}</p>
+			<p><b>Rise Time: </b>{{Schedule.riseTime}}</p>
+			<p><b>Repeat: </b>{{Schedule.loopEnabled}}</p>
+			<p><b>Repeat Count: </b>{{Schedule.loopCount}}</p>
 
-		{% if not IsActive %}
-		<p>Press Start to start the schedule.</p>
-		<a href="/webStartDunk"><input type="button" value="Start"></a><br>
+			<div id="DunkActive">
+				<br><p>Press Stop to stop the dunk operation and return to the Schedules page.</p>
+				<a href="/webStopDunk"><input type="button" onClick="ShowInactive()" value="Stop"></a><br>
+			</div>
 
-		{% else %}
-		<p>Press Stop to return to the main schedules page.  This will stop the current dunk operation.</p>
-		<a href="/webStopDunk"><input type="button" value="Stop/Back"></a>
-		
- 		{% endif %}
+			<div id="DunkInactive">
+				<br><p>Press Start to start the schedule.  Start button will be disabled during a scheduled dunk.</p>
+				<a href="/webStartDunk"><input type="button" onClick="ShowActive()" value="Start"></a><br>
+			</div>
+		</div>
+
+		<script>
+		var activeDiv 		= document.getElementById("DunkActive");
+		var inactiveDiv 	= document.getElementById("DunkInactive");
+
+		function ShowActive()
+		{
+		  	activeDiv.style.display = "block";
+		  	inactiveDiv.style.display = "none";
+		}
+		function ShowInactive()
+		{
+		  	activeDiv.style.display = "none";
+		  	inactiveDiv.style.display = "block";
+		}
+		</script>
+
+		<br>
+		<img src="/static/turtle_awesome.jpg" id="TurtleyAwesome" width="600" height="200">
 	</body>
 </html>
