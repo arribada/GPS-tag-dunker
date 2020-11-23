@@ -16,13 +16,13 @@
   "SavedSchedules":
   [
     {
-      "name":"D6s-R3s-L",
+      "name":"D4s-R2s-L2",
       "startTime":"",
       "finishTime":"",
-      "dunkTime":"00:00:06",
-      "riseTime":"00:00:03",
+      "dunkTime":"00:00:04",
+      "riseTime":"00:00:02",
       "loopEnabled":"on",
-      "loopCount":5
+      "loopCount":2
     },
     {
       "name":"D1h-R15s",

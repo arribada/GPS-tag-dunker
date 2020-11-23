@@ -7,45 +7,54 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 		<title>GPS Tag Dunker</title>
 	</head>
 	<body>
-		<h2>Current Schedule</h2>
-		<p>There is no schedule running.  Please view a schedule to confirm its details and start it.</p>
-		<form action="/webViewSchedule" method="get">
-			<fieldset>
-				<legend>New Schedule:</legend>
-				Schedule Name:		<input type="text" name="scheduleName" required><br><br>
-				Dunk Time:  		<input type="time" name="dunkTime" step="1" required><br><br>
-				Rise Time:  		<input type="time" name="riseTime" step="1" required><br><br>
-				Repeat Schedule:  	<input type="checkbox" name="loopEnabled"><br><br> <!--  -->
-				Repeat Count:  		<input type="number" name="loopCount" min="-1" value="0"><br><br>
-				<input type="submit" value="Check Schedule"><br><br>
- 			</fieldset>
-		</form>
+		{% if not IsLocked %}
+			<h2>Current Schedule</h2>
+			<p>There is no schedule running.  Please view a schedule to confirm its details and start it.</p>
+			<form action="/webViewSchedule" method="get">
+				<fieldset>
+					<legend>New Schedule:</legend>
+					Schedule Name:		<input type="text" name="scheduleName" required><br><br>
+					Dunk Time:  		<input type="time" name="dunkTime" step="1" required><br><br>
+					Rise Time:  		<input type="time" name="riseTime" step="1" required><br><br>
+					Repeat Schedule:  	<input type="checkbox" name="loopEnabled"><br><br> <!--  -->
+					Repeat Count:  		<input type="number" name="loopCount" min="-1" value="0"><br><br>
+					<input type="submit" value="Check Schedule"><br><br>
+	 			</fieldset>
+			</form><br>
 
-		<h2>Dunk Testing</h2>
-		<p>Please use the buttons below to test the winch's winding in and out capabilities.</p>
-		<a href="/webStopWind"><input type="button" value="Stop Winding"></a>
-		<a href="/webWindOut"><input type="button" value="Wind Tag Down"></a>
-		<a href="/webWindIn"><input type="button" value="Wind Tag Up"></a>
+			<h2>Dunk Testing</h2>
+			<p>Please use the buttons below to test the winch's winding in and out capabilities.</p>
+			<a href="/webStopWind"><input type="button" value="Stop Winding"></a>
+			<a href="/webWindOut"><input type="button" value="Wind Tag Down"></a>
+			<a href="/webWindIn"><input type="button" value="Wind Tag Up"></a>
 
-		<h2>Saved Schedules</h2>
- 		{%for schedule in Schedules%}
- 			<div>
- 				<form action="/webViewSchedule" method="get">
- 					<label><b>Name: </b> {{schedule.name}}</label><br>
- 					<input type="hidden" name="scheduleName" value={{schedule.name}}>
+			<h2>Saved Schedules</h2>
+	 		{%for schedule in Schedules%}
+	 			<div>
+	 				<form action="/webViewSchedule" method="get">
+	 					<label><b>Name: </b> {{schedule.name}}</label><br>
+	 					<input type="hidden" name="scheduleName" value={{schedule.name}}>
 
- 					<input type="submit" value="View Schedule">
- 					
- 					<!--<label><b>Dunk Time: </b>{{schedule.dunkTime}}</label>-->
- 					<input type="hidden" name="dunkTime" value={{schedule.dunkTime}}>
- 					<!--<label><b>Rise Time: </b>{{schedule.riseTime}}</label>-->
- 					<input type="hidden" name="riseTime" value={{schedule.riseTime}}>
- 					<!--<label><b>Repeat Enabled: </b>{{schedule.loopEnabled}}</label>-->
- 					<input type="hidden" name="loopEnabled" value={{schedule.loopEnabled}}>
- 					<!--<label><b>Repeat Count: </b>{{schedule.loopCount}}</label>-->
- 					<input type="hidden" name="loopCount" value={{schedule.loopCount}}>
-				</form><br>
- 			</div>
- 		{%endfor%}
+	 					<input type="submit" value="View Schedule">
+	 					
+	 					<!--<label><b>Dunk Time: </b>{{schedule.dunkTime}}</label>-->
+	 					<input type="hidden" name="dunkTime" value={{schedule.dunkTime}}>
+	 					<!--<label><b>Rise Time: </b>{{schedule.riseTime}}</label>-->
+	 					<input type="hidden" name="riseTime" value={{schedule.riseTime}}>
+	 					<!--<label><b>Repeat Enabled: </b>{{schedule.loopEnabled}}</label>-->
+	 					<input type="hidden" name="loopEnabled" value={{schedule.loopEnabled}}>
+	 					<!--<label><b>Repeat Count: </b>{{schedule.loopCount}}</label>-->
+	 					<input type="hidden" name="loopCount" value={{schedule.loopCount}}>
+					</form><br>
+	 			</div>
+	 		{%endfor%}
+
+	 	{% else %}
+			<h2>Please wait while dunk operation finishes.</h2>
+			<p>When the tag has been fully raised, please refresh this page.</p>
+
+ 		{% endif %}
+
+
 	</body>
 </html>

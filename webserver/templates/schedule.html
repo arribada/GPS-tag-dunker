@@ -14,10 +14,14 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 		<p><b>Repeat Enabled: </b>{{Schedule.loopEnabled}}</p>
 		<p><b>Repeat Count: </b>{{Schedule.loopCount}}</p><br>
 
+		{% if not IsActive %}
 		<p>Press Start to start the schedule.</p>
 		<a href="/webStartDunk"><input type="button" value="Start"></a><br>
 
-		<p>Press Stop to stop the schedule and return to the main schedules page.</p>
-		<a href="/webStopDunk"><input type="button" value="Stop"></a>
+		{% else %}
+		<p>Press Stop to return to the main schedules page.  This will stop the current dunk operation.</p>
+		<a href="/webStopDunk"><input type="button" value="Stop/Back"></a>
+		
+ 		{% endif %}
 	</body>
 </html>
