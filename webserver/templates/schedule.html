@@ -8,11 +8,16 @@ Authored by TechDevTom/Tom Southworth, 2020, for The Arribada Initiative. -->
 	<body>
 		<h1>GPS Tag Dunker</h1>
 		<h2>Current Schedule</h2>
-		<p>{{ name }}</p>
-		<p>{{ startTime }}</p>
-		<p>{{ finishTime }}</p><br>
+		<p><b>Name: </b>{{Schedule.name}}</p>
+		<p><b>Dunk Time: </b>{{Schedule.dunkTime}}</p>
+		<p><b>Rise Time: </b>{{Schedule.riseTime}}</p>
+		<p><b>Repeat Enabled: </b>{{Schedule.loopEnabled}}</p>
+		<p><b>Repeat Count: </b>{{Schedule.loopCount}}</p><br>
 
-		<p>{{ TestingString }}</p>
-		<a href="/webStopDunk"><input type="button" value="Stop Dunk"></a>
+		<p>Press Start to start the schedule.</p>
+		<a href="/webStartDunk"><input type="button" value="Start"></a><br>
+
+		<p>Press Stop to stop the schedule and return to the main schedules page.</p>
+		<a href="/webStopDunk"><input type="button" value="Stop"></a>
 	</body>
 </html>

@@ -5,7 +5,6 @@
 # LIBRARY IMPORTING
 import os
 from datetime import datetime, timedelta
-import pause
 import json
 import RPi.GPIO as GPIO
 from time import sleep
@@ -59,16 +58,22 @@ class Schedule:
 settingsFilePath = os.getcwd() + "/settings.json"
 
 # Allows for reading whether the GPS Tag Dunker is currently dunking.
-isDunking = False
+isActive = False
+
+# The five states that the tag dunker can be in.
+dunkStates = ('dunking', 'dunked', 'rising', 'risen', 'idle')
+
+# The state that the tag dunker is currently in.
+dunkState = ''
 
 # Declares an empty Schedule ready to be populated by JSON info.
 currentSchedule = Schedule('', '', '', '', '', '' ,'')
 
-# Variable the holds the amount of seconds that are in an hour.
-secondsInHours = 3600
+# The time it takes to dunk a tag
+tagDunkWindTime = datetime.strptime ('03.00', '%S.%f')
 
-# Create an array for all the different schduled lifts to go into.
-scheduledLifts = []
+#The time it takes to raise a tag
+tagRiseWindTime = datetime.strptime ('03.25', '%S.%f')
 
 # WINCH CONTROL VARIABLES
 # Clean up any errors from last execution (ensures winch not reeling).
@@ -110,8 +115,8 @@ def RefreshSchedule():
 	settings = GetSettingsData();
 
 	# Assign GPS Tag Dunker state info.
-	global isDunking
-	isDunking = settings['State']['isDunking']
+	global isActive
+	isActive = settings['State']['isActive']
 
 	# Load in the current schedule's information.
 	global currentSchedule
@@ -128,7 +133,10 @@ RefreshSchedule();
 
 
 # Saves the given json data to the settings.json file's list of Saved Schedules.
-def SaveAndStartSchedule(scheduleData):
+def SaveSchedule(scheduleData):
+
+	global isActive
+	global currentSchedule
 
 	# Retrieve the settings
 	settings = GetSettingsData()
@@ -145,16 +153,16 @@ def SaveAndStartSchedule(scheduleData):
 
 	# Load in the SavedSchdules list and append the new Schedule
 	# TODO:  Need to insert check to see if all parameters for new Schedule already exist.
-	savedSchedules = settings['SavedSchedules']
+	# savedSchedules = settings['SavedSchedules']
 
-	if not CheckScheduleExists(scheduleData):
-		savedSchedules.append(scheduleData)
+	# if not CheckScheduleExists(scheduleData):
+	# 	savedSchedules.append(scheduleData)
 
-	# Set the isDunking value to true for reference.
-	isDunking = True
+	# Set the isActive value to true for reference.
+	isActive = True
 
-	# Set the settings' isDunking State field to True.
-	settings['State']['isDunking'] = isDunking;
+	# Set the settings' isActive State field to True.
+	settings['State']['isActive'] = isActive;
 
 	# Save new settings data into json file.
 	with open(settingsFilePath, 'w') as f:
@@ -163,29 +171,28 @@ def SaveAndStartSchedule(scheduleData):
  	# Refresh Schedule and settings JSON DATA.
 	RefreshSchedule();
 
-	# Run the Schedule
-	loopCount = int(currentSchedule['loopCount'])
-	print ('Scheduled dunk will end at:  ' + currentSchedule['finishTime'])
+	# # Run the Schedule
+	# loopCount = int(currentSchedule['loopCount'])
+	# print ('Scheduled dunk will end at:  ' + currentSchedule['finishTime'])
 
-	if currentSchedule['loopEnabled'] == 'true':
-		print ('Starting looped dunk:  ' + str(loopCount) + ', ' + currentSchedule['loopEnabled']);
-		if loopCount > 0:
-			for i in range(loopCount):
-				# Wind the tag up and down until the loop count is complete
-				WindInTimed (3, datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S').time());
-				WindInTimed (3, datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S').time());
-		# 		print ('Loop ' + str(i) + ' completed.');
-		# else:
-		# 	# Infinitely Loop
+	# if currentSchedule['loopEnabled'] == 'on':
+	# 	print ('Starting looped dunk:  ' + str(loopCount) + ', ' + currentSchedule['loopEnabled']);
+	# 	if loopCount > 0:
+	# 		for i in range(loopCount):
+	# 			# Wind the tag up and down until the loop count is complete
+	# 			WindOutTimed (3, datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S').time());
+	# 			WindInTimed (3.5, datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S').time());
+	# 	 		print ('Loop ' + str(i+1) + ' completed.');
+	# 	# else:
+	# 	# 	# Infinitely Loop
 
-	else:
-		print ('Starting one off dunk:  ' + str(loopCount) + ', ' + currentSchedule['loopEnabled']);
-		# Wind the tag up and down once.
-		WindInTimed (3, datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S').time());
-		print ('Loop ' + str(i) + ' completed.');
-		WindInTimed (3, datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S').time());
+	# else:
+	# 	print ('Starting one off dunk:  ' + str(loopCount) + ', ' + currentSchedule['loopEnabled']);
+	# 	# Wind the tag up and down once.
+	# 	WindOutTimed (3, datetime.strptime(currentSchedule['dunkTime'], '%H:%M:%S').time());
+	# 	WindInTimed (3, datetime.strptime(currentSchedule['riseTime'], '%H:%M:%S').time());
 
-	print ('Scheduled Dunk Finished');
+	# print ('Scheduled Dunk Finished');
 
 
 def CheckScheduleExists(scheduleToCheck):
@@ -221,52 +228,182 @@ def WindOut():
 def StopWind():
 	GPIO.output(winchInPin, GPIO.LOW)
 	GPIO.output(winchOutPin, GPIO.LOW)
-	sleep(delay)
-
-# Winds the Tag up for windInTime, then waits for riseTime.
-def WindInTimed(windInTime, riseTime):
-
-	# Wind the tag out of the water, and wait the required riseTime.
-	WindIn()
-	sleep (3) # TODO: Replace 3 with time it takes to wind tag out of water, depth dependant!
-	StopWind()
-	pause.seconds((riseTime.hour * 60 + riseTime.minute) * 60 + riseTime.second);
 
 
-# Winds the Tag up for windOutTime, then waits for dunkTime.
-def WindOutTimed(windOutTime, dunkTime):
+# Retrieves and saves the FinishTime for the currentSchedule.
+def RefreshStartFinishTimes():
 
-	# Wind the tag down into the water, and wait the required dunkTime.
-	WindOut();
-	sleep (3); # TODO: Replace 3 with time it takes to wind tag under water, depth dependant!
-	StopWind();
-	pause.seconds((dunkTime.hour * 60 + dunkTime.minute) * 60 + dunkTime.second);
+	finishTime 	= datetime.strptime(str(datetime.min), '%Y-%m-%d %H:%M:%S')
+	loopCount 	= int(currentSchedule.loopCount)
+
+	# Set up initial dunkTime and riseTime values for parsing into datetime.time values.
+	initialDunkTime = currentSchedule.dunkTime
+	initialRiseTime = currentSchedule.riseTime
+
+	# Check to see if any seconds exist on the time.  Add them if not present.
+	if len(str(initialDunkTime)) < 6:
+		initialDunkTime = initialDunkTime + ':00'
+
+	if len(str(initialRiseTime)) < 6:
+		initialRiseTime = initialRiseTime + ':00'
+
+	# Convert stored dunkTime and riseTime to datetime values
+	dunkTime 	= datetime.combine (datetime.min, datetime.strptime(initialDunkTime, '%H:%M:%S').time()) - datetime.min
+	riseTime 	= datetime.combine (datetime.min, datetime.strptime(initialRiseTime, '%H:%M:%S').time()) - datetime.min
+	tagDWT 		= datetime.combine (datetime.min, tagDunkWindTime.time()) - datetime.min
+	tagRWT 		= datetime.combine (datetime.min, tagRiseWindTime.time()) - datetime.min
+
+	# Set the new start time for the currentSchedule.
+	currentSchedule.startTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+	# Calculate the total time that the tag spends dunked and raised.
+	dunkRiseTotalTime = dunkTime + riseTime + tagDWT + tagRWT
+
+	# Calculate overall finish time based on whether the schedule loops or not.
+	if currentSchedule.loopEnabled == 'true':
+
+		# Infinitely loops, no finish time.
+		if loopCount < 0:
+			finishTime = datetime.strptime(str(datetime.max), '%Y-%m-%d %H:%M:%S')
+
+		# Has a set loop count.
+		elif loopCount > 0:
+			for i in range(loopCount - 1):
+				dunkRiseTotalTime = dunkRiseTotalTime + dunkTime + riseTime + tagDWT + tagRWT
+
+			finishTime = datetime.strptime(currentSchedule.startTime, '%Y-%m-%d %H:%M:%S') + dunkRiseTotalTime
+
+	# No loops involved.
+	else:
+		finishTime = datetime.strptime(currentSchedule.startTime, '%Y-%m-%d %H:%M:%S') + dunkRiseTotalTime
+
+	# Set the new finish time for the currentSchedule.
+	currentSchedule.finishTime = str(finishTime)
+
+	# Retrieve the settings and save the new finish time for the currentSchedule.
+	settings = GetSettingsData()
+	settings['CurrentSchedule']['startTime'] 	= currentSchedule.startTime;
+	settings['CurrentSchedule']['finishTime'] 	= currentSchedule.finishTime;
+
+	# Save new settings data into json file.
+	with open(settingsFilePath, 'w') as f:
+		json.dump(settings, f, indent=4);
+
+	print (currentSchedule.finishTime);
+
+
+# Returns the time that is now with the given plusTime added to it.
+def GetTimeNowPlus (plusTime, hasDate):
+
+	finalDateTime 	= datetime.now()
+	timeToAdd 		= datetime.combine (datetime.min, datetime.strptime(plusTime, '%H:%M:%S').time()) - datetime.min
+	finalDateTime = datetime.strptime(originalTime, '%Y-%m-%d %H:%M:%S.%f')
+
+	return finalDateTime + timeToAdd;
+
+
+
+# Carries out the Dunk Schedule
+def DunkRoutine():
+
+	print ('Starting Routine');
+
+	RefreshStartFinishTimes();
+	finishTime 	= datetime.strptime(currentSchedule.finishTime, '%Y-%m-%d %H:%M:%S.%f')
+	riseTime 	= datetime.strptime(currentSchedule.riseTime, '%H:%M:%S')
+	dunkTime 	= datetime.strptime(currentSchedule.dunkTime, '%H:%M:%S')
+	loopCount 	= int(currentSchedule.loopCount)
+
+	print ('Finish Time:  ' + str(finishTime))
+	loopCounter = 0
+
+	while (datetime.now() < finishTime and isActive):
+
+		print ('Starting Loop ' + str(loopCounter+1));
+
+		# Wind Out Section, cannot be interrupted.
+		dunkState = dunkStates[0]
+		waitTime = GetTimeNowPlus(tagDunkWindTime)
+		WindOut();
+		sleep (tagDunkWindTime.second);
+		StopWind();
+		dunkState = dunkStates[1]
+
+		# Check to see if user has cancelled schedule.
+		if !isActive:
+			continue;
+
+		# Dunking Section, can be interrupted for cancellation/new schedule.
+		waitTime = GetTimeNowPlus(dunkTime)
+		while (datetime.now() < waitTime and isActive):
+			print ('Is Active:  ' + str(isActive))
+			sleep(1)
+
+		# Check to see if user has cancelled schedule.
+		if !isActive:
+			continue;
+		#sleep((dunkTime.hour * 60 + dunkTime.minute) * 60 + dunkTime.second)
+
+		# Wind In Section, cannot be interrupted.
+		dunkState = dunkStates[2]
+		waitTime = GetTimeNowPlus(tagRiseWindTime)
+		WindIn()
+		sleep (tagRiseWindTime.second);
+		StopWind()
+		dunkState = dunkStates[3]
+
+		# Check to see if user has cancelled schedule.
+		if !isActive:
+			continue;
+
+		# Raised Section, can be interrupted for cancellation/new schedule.
+		waitTime = GetTimeNowPlus(riseTime)
+		while (datetime.now() < waitTime and isActive):
+			print ('Is Active:  ' + str(isActive))
+			sleep(1)
+
+		# Check to see if user has cancelled schedule.
+		if !isActive:
+			continue;
+		#sleep((riseTime.hour * 60 + riseTime.minute) * 60 + riseTime.second)
+
+		# Add a new loop to the loopCounter.
+		loopCounter += 1
+
+		# Set the Dunk State to idle.
+		dunkState = dunkStates[4]
+		if isActive:
+			print ('Schedule Finished Automatically, ready for new schedule.')
+
+		else:
+			print ('Schedule was cancelled by the user, ready for new schedule.')
+			
+			# Wind Tag Up after cancelled operation.
+			if dunkState == dunkStates[1]:
+				waitTime = GetTimeNowPlus(tagDunkWindTime)
+				WindIn();
+				sleep (tagRiseWindTime.second);
+				StopWind();
+
+	return noSchedule();
 
 
 # WEBSITE CREATION
 # Initialise the web app.
 app = Flask(__name__)
 
-
 # The index method determines which page to load based on whether the tag dunker is dunking or not.
 @app.route('/')
 def index():
 
-	if isDunking:
-		return schedule();
-	else:
-		return noSchedule();
+	print ('Index Triggered, isActive:  ' + str(isActive));
 
 
 # This is the page that is presented when a schedule is not running.
 @app.route('/NoSchedule')
 def noSchedule():
 
-	dunkData = currentSchedule.getData()
-	scheduleString = "There is no scheduled dunk occurring.  Starting a schedule will automatically save it.";
-	testingString = ('Testing is available.');
-	schedules = GetSavedSchedules()
-	return render_template('noschedule.html', scheduleInfo=scheduleString, testingInfo=testingString, Schedules=schedules)
+	return render_template('noschedule.html', Schedules=GetSavedSchedules())
 
 
 # This is the page that is presented when scheduled dunk is running.
@@ -274,21 +411,12 @@ def noSchedule():
 @app.route('/Schedule')
 def schedule():
 
-	settings = GetSettingsData();
-
-	scheduleData 	= currentSchedule.getData()
-	name 			= 'Name:  ' + scheduleData['name']
-	startTime 		= 'Start Time:  ' + scheduleData['startTime']
-	finishTime 		= 'Finish Time:  ' + scheduleData['finishTime']
-
-	testingString 	= ('Testing is not available while a scheduled dunk is ongoing.  Press stop to stop current scheduled dunk and start a new one.')
-	templateData 	= {'name':name, 'startTime':startTime, 'finishTime':finishTime, 'TestingString':testingString}
-	return render_template('schedule.html', **templateData)
+	return render_template('schedule.html', Schedule=currentSchedule.getData())
 
 
 # Saves and Starts a dunk Schedule based on user input from the new Schedule web form.
-@app.route('/webStartSchedule', methods=['GET'])
-def webStartSchedule():
+@app.route('/webViewSchedule', methods=['GET'])
+def webViewSchedule():
 
 	print ('Attempting to save and start schedule!');
 
@@ -300,61 +428,46 @@ def webStartSchedule():
 		'startTime':startTime.strftime('%Y-%m-%d %H:%M:%S'),
 		'dunkTime':str(request.args.get('dunkTime')),
 		'riseTime':str(request.args.get('riseTime')),
-		'loopEnabled':str('true' if request.args.get('loopEnabled') == 'on' else 'false'),
+		'loopEnabled':str(request.args.get('loopEnabled')),
 		'loopCount':str(request.args.get('loopCount'))
 		}
 
 	print ('Schedule Data:  ' + scheduleData['name']);
 
 	finishTime 	= datetime.strptime(str(datetime.min), '%Y-%m-%d %H:%M:%S')
-	loopCount 	= int(scheduleData['loopCount'])
-	if scheduleData['loopEnabled'] == 'true':
-
-		if loopCount < 0:
-			finishTime = datetime.strptime(str(datetime.max), '%Y-%m-%d %H:%M:%S')
-
-		elif loopCount > 0:
-
-			# Set up initial dunkTime and riseTime values for parsing into datetime.time values.
-			initialDunkTime = scheduleData['dunkTime']
-			initialRiseTime = scheduleData['riseTime']
-
-			# Check to see if any seconds exist on the time.  Add them if not present.
-			if len(str(initialDunkTime)) < 6:
-				initialDunkTime = initialDunkTime + ':00'
-
-			if len(str(initialRiseTime)) < 6:
-				initialRiseTime = initialRiseTime + ':00'
-
-			# Convert stored dunkTime and riseTime to datetime values
-			dunkTime = datetime.combine (datetime.min, datetime.strptime(initialDunkTime, '%H:%M:%S').time()) - datetime.min
-			riseTime = datetime.combine (datetime.min, datetime.strptime(initialRiseTime, '%H:%M:%S').time()) - datetime.min
-
-			dunkRiseTotalTime = dunkTime + riseTime
-			for i in range(loopCount - 1):
-				dunkRiseTotalTime = dunkRiseTotalTime + dunkTime + riseTime
-
-			finishTime = datetime.strptime(scheduleData['startTime'], '%Y-%m-%d %H:%M:%S') + dunkRiseTotalTime
-
 	scheduleData['finishTime'] = str(finishTime)
-	SaveAndStartSchedule(scheduleData);
+	SaveSchedule(scheduleData);
 
-	# Finish by sending the user to the web page where it shows the current schedule.
+	return schedule();
+
+
+@app.route('/webStartDunk')
+def webStartDunk():
+
+	global isActive
+	isActive = True;
+	dunkingRoutine.__next__()
+
 	return schedule();
 
 
 # This is for the function that stops a scheduled dunk and resets the current schedule.
 @app.route('/webStopDunk') 
 def webStopDunk():
- 	StopWind();
- 	WindOut();
- 	sleep (0.2);
- 	WindIn();
- 	sleep (0.2);
+
+	global isActive
+
+	StopWind();
+	WindOut();
+	sleep (0.2);
+	WindIn();
+	sleep (0.2);
 	StopWind();
 
-	isDunking = False;
+	isActive = False;
 	print ("STOPPED DUNK");
+
+	dunkingRoutine.close();
 
 	return noSchedule()
 
@@ -362,15 +475,16 @@ def webStopDunk():
 @app.route('/webStopWind') 
 def webStopWind():
 	print ("STOP");
- 	StopWind();
+	StopWind();
 	return noSchedule()
 
 # This is for the function that winds the Winch out.
 @app.route('/webWindOut') 
 def webWindOut():
-	if not isDunking:
+
+	if not isActive:
 		print ("OUT");
- 		WindOut();
+		WindOut();
 	else:
 		print ("NOT AVAILABLE, DUNKING IN PROGRESS");
 	return noSchedule()
@@ -378,9 +492,10 @@ def webWindOut():
 # This is for the function that winds the Winch in.
 @app.route('/webWindIn') 
 def webWindIn():
-	if not isDunking:
+
+	if not isActive:
 		print ("IN");
-	 	WindIn();
+		WindIn();
 	else:
 		print ("NOT AVAILABLE, DUNKING IN PROGRESS");
 	return noSchedule()
@@ -389,4 +504,4 @@ def webWindIn():
 
 # Runs the Flask server and website.
 if __name__ == '__main__':
-    app.run(debug=True, port=80, host='0.0.0.0')
+	app.run(debug=True, port=80, host='0.0.0.0')
