@@ -25,13 +25,13 @@
       "loopCount":2
     },
     {
-      "name":"D1h-R15s",
+      "name":"TeaAndBiscuits",
       "startTime":"",
       "finishTime":"",
-      "dunkTime":"00:01:00",
-      "riseTime":"00:00:15",
-      "loopEnabled":"off",
-      "loopCount":0
+      "dunkTime":"00:00:02",
+      "riseTime":"00:00:03",
+      "loopEnabled":"on",
+      "loopCount":2
     },
     {
       "name":"D10s-R5s",
