@@ -51,6 +51,9 @@ class Schedule:
         self.loopCount  	= loopCount
 
 
+
+
+
 # VARIABLE SETUP
 # GPS TAG DUNKER SETTINGS VARIABLES
 # The file path of the Settings file.
@@ -82,17 +85,38 @@ tagRiseWindTime = datetime.strptime ('03.25', '%S.%f')
 GPIO.setwarnings(False)
 GPIO.cleanup()
 
-# Set the board to use the GPIO numbering system for its pins.
-GPIO.setmode(GPIO.BCM)
+# # Set the board to use the GPIO numbering system for its pins.
+# GPIO.setmode(GPIO.BCM)
 
-# Define the relay pins, which are used to let the winch cable in or out.
-winchInPin = 21
-GPIO.setup(winchInPin, GPIO.OUT)
-winchOutPin = 20
-GPIO.setup(winchOutPin, GPIO.OUT)
+# # Define the relay pins, which are used to let the winch cable in or out.
+# winchInPin = 21
+# GPIO.setup(winchInPin, GPIO.OUT)
+# winchOutPin = 20
+# GPIO.setup(winchOutPin, GPIO.OUT)
 
 # Define the delay time between winch movements (for safety).
 delay = 1
+
+
+
+# CYTRON MOTOR CONTROL SETUP
+GPIO.setwarnings(False)			# enable warning from GPIO
+GPIO.setmode(GPIO.BCM)			# GPIO numbering
+
+AN2 = 13						# set pwm2 pin on MD10-Hat
+AN1 = 12						# set pwm1 pin on MD10-hat
+DIG2 = 24						# set dir2 pin on MD10-Hat
+DIG1 = 26						# set dir1 pin on MD10-Hat
+
+GPIO.setup(AN2, GPIO.OUT)		# set pin as output
+GPIO.setup(AN1, GPIO.OUT)		# set pin as output
+GPIO.setup(DIG2, GPIO.OUT)		# set pin as output
+GPIO.setup(DIG1, GPIO.OUT)		# set pin as output
+
+sleep(1)						# delay for 1 seconds
+
+p1 = GPIO.PWM(AN1, 100)			# set pwm for M1
+p2 = GPIO.PWM(AN2, 100)			# set pwm for M2
 
 
 # SETTINGS & SCHEDULE CODE
@@ -205,19 +229,29 @@ def CheckScheduleExists(scheduleToCheck):
 # Wind In Method
 def WindIn():
 	StopWind()
-	GPIO.output(winchInPin, GPIO.HIGH)
-	GPIO.output(winchOutPin, GPIO.LOW)
+	# GPIO.output(winchInPin, GPIO.HIGH)
+	# GPIO.output(winchOutPin, GPIO.LOW)
+	GPIO.output(DIG1, GPIO.LOW)          # set DIG1 as LOW, to control direction
+	GPIO.output(DIG2, GPIO.LOW)          # set DIG2 as LOW, to control direction
+	p1.start(100)                        # set speed for M1 at 100%
+	p2.start(100)                        # set speed for M2 at 100%
 
 # Wind Out Method
 def WindOut():
 	StopWind()
-	GPIO.output(winchInPin, GPIO.LOW)
-	GPIO.output(winchOutPin, GPIO.HIGH)
+	# GPIO.output(winchInPin, GPIO.LOW)
+	# GPIO.output(winchOutPin, GPIO.HIGH)
+	GPIO.output(DIG1, GPIO.HIGH)         # set DIG1 as LOW, to control direction
+	GPIO.output(DIG2, GPIO.HIGH)         # set DIG2 as LOW, to control direction
+	p1.start(100)                        # set speed for M1 at 100%
+	p2.start(100)                        # set speed for M2 at 100%
 
 # Stop Wind Method
 def StopWind():
-	GPIO.output(winchInPin, GPIO.LOW)
-	GPIO.output(winchOutPin, GPIO.LOW)
+	# GPIO.output(winchInPin, GPIO.LOW)
+	# GPIO.output(winchOutPin, GPIO.LOW)
+	p1.start(0)                          # set speed for M1 at 0%
+	p2.start(0)                          # set speed for M2 at 0%
 
 
 # Retrieves and saves the FinishTime for the currentSchedule.
